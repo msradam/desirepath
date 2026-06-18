@@ -1,8 +1,8 @@
-# desirepath
+# Desirepath
 
 Urban street network analysis as an MCP server and CLI.
 
-An LLM or CLI tool can ask: route between two points, find missing links, measure circuity, compute isochrones, compare cities, render interactive maps. desirepath is a typed MCP interface over [OSMnx](https://github.com/gboeing/osmnx) and [Momepy](https://github.com/martinfleis/momepy), with 20 tools and 9 resources.
+An LLM or CLI tool can ask: route between two points, find missing links, measure circuity, compute isochrones, compare cities, render interactive maps. Desirepath is a typed MCP interface over [OSMnx](https://github.com/gboeing/osmnx) and [Momepy](https://github.com/martinfleis/momepy), with 20 tools and 9 resources.
 
 ## Install
 
