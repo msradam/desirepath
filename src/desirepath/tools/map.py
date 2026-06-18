@@ -14,6 +14,25 @@ _MAP_APP = AppConfig(resource_uri="ui://desirepath/map")
 _TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
 
 
+def _normalize_markers(markers: list[dict] | None) -> list[dict]:
+    if not markers:
+        return []
+    out = []
+    for m in markers:
+        lat = m.get("lat")
+        lng = m.get("lng")
+        if lat is None or lng is None:
+            continue
+        out.append(
+            {
+                "pt": [round(float(lat), 5), round(float(lng), 5)],
+                "label": str(m.get("label", "")),
+                "color": str(m.get("color", "#ff6600")),
+            }
+        )
+    return out
+
+
 def _edge_lines(edges_gdf, simplify: float = 0.0001) -> list:
     result = []
     for geom in edges_gdf.geometry:
@@ -30,8 +49,23 @@ def _map_bounds(edges_gdf) -> tuple:
     return sw, ne, center
 
 
+def _markers_js(markers: list[dict]) -> str:
+    if not markers:
+        return ""
+    return (
+        f"{json.dumps(markers, separators=(',', ':'))}"
+        ".forEach(m=>L.circleMarker(m.pt,{radius:9,color:m.color,fillColor:m.color,"
+        'fillOpacity:.85,weight:2}).bindTooltip(m.label||"",{sticky:true}).addTo(map));'
+    )
+
+
 def _fallback_html(
-    edges: list, overlay: dict | None, sw: list, ne: list, center: list
+    edges: list,
+    overlay: dict | None,
+    sw: list,
+    ne: list,
+    center: list,
+    markers: list | None = None,
 ) -> str:
     edges_js = json.dumps(edges, separators=(",", ":"))
     body = (
@@ -52,6 +86,7 @@ def _fallback_html(
         body += f'{json.dumps(overlay["nodes"], separators=(",", ":"))}.forEach(pt=>L.circleMarker(pt,{{radius:4,color:"#2255aa",fillOpacity:.7}}).addTo(m));'
     else:
         body += f'{edges_js}.forEach(c=>L.polyline(c,{{color:"#555",weight:2,opacity:.7}}).addTo(m));'
+    body += _markers_js(markers or [])
     body += f"m.fitBounds([[{sw[0]},{sw[1]}],[{ne[0]},{ne[1]}]]);"
     return (
         '<!DOCTYPE html><html><head><meta charset="utf-8">'
@@ -64,9 +99,18 @@ def _fallback_html(
 
 def register(mcp: FastMCP, store: GraphStore) -> None:
     @mcp.tool(app=_MAP_APP)
-    def map_graph(graph_name: str = None, ctx: Context = None) -> str:
+    def map_graph(
+        graph_name: str = None,
+        markers: list[dict] | None = None,
+        ctx: Context = None,
+    ) -> str:
         """
         Render the street network as an interactive Leaflet map.
+
+        markers: optional list of points to highlight over the network, useful for
+          plotting analysis results such as betweenness centrality nodes or missing
+          link candidates. Each entry: {"lat": ..., "lng": ..., "label": "...", "color": "#e00"}
+          label and color are optional (default color: orange).
 
         When the host supports MCP Apps (MCPJam Inspector), the map appears
         inline as a live iframe. On other hosts, returns standalone HTML saved
@@ -76,6 +120,7 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
         _, edges_gdf = ox.graph_to_gdfs(G)
         sw, ne, center = _map_bounds(edges_gdf)
         edges = _edge_lines(edges_gdf)
+        marker_list = _normalize_markers(markers)
 
         if ctx and ctx.client_supports_extension(UI_EXTENSION_ID):
             return json.dumps(
@@ -86,11 +131,12 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
                     "center": center,
                     "node_count": len(G.nodes),
                     "edge_count": len(G.edges),
+                    "markers": marker_list,
                 },
                 separators=(",", ":"),
             )
 
-        html = _fallback_html(edges, None, sw, ne, center)
+        html = _fallback_html(edges, None, sw, ne, center, marker_list)
         out_path = _SAVE_DIR / "desirepath_map.html"
         out_path.write_text(html, encoding="utf-8")
         return html
@@ -103,6 +149,7 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
         dest_lat: float,
         weight: str = "length",
         graph_name: str = None,
+        markers: list[dict] | None = None,
         ctx: Context = None,
     ) -> str:
         """
@@ -112,6 +159,7 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
         shortest path by the given weight, and renders it inline (MCP Apps) or saves
         to ~/Downloads/desirepath_route_map.html (fallback).
         weight: 'length' (meters) or 'travel_time' (seconds, requires enriched graph).
+        markers: optional points to overlay on the map (same format as map_graph).
         """
         from shapely.geometry import LineString
         from shapely.ops import linemerge
@@ -144,6 +192,7 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
         route_coords = [[round(y, 4), round(x, 4)] for x, y in linemerge(geoms).coords]
         orig_pt = [round(G.nodes[orig_node]["y"], 4), round(G.nodes[orig_node]["x"], 4)]
         dest_pt = [round(G.nodes[dest_node]["y"], 4), round(G.nodes[dest_node]["x"], 4)]
+        marker_list = _normalize_markers(markers)
 
         if ctx and ctx.client_supports_extension(UI_EXTENSION_ID):
             return json.dumps(
@@ -156,6 +205,7 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
                     "bounds": [sw, ne],
                     "center": center,
                     "length_m": round(length_m, 1),
+                    "markers": marker_list,
                 },
                 separators=(",", ":"),
             )
@@ -166,7 +216,7 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
             "orig": orig_pt,
             "dest": dest_pt,
         }
-        html = _fallback_html(edges, overlay, sw, ne, center)
+        html = _fallback_html(edges, overlay, sw, ne, center, marker_list)
         out_path = _SAVE_DIR / "desirepath_route_map.html"
         out_path.write_text(html, encoding="utf-8")
         return html
@@ -177,6 +227,7 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
         lng: float,
         trip_time_s: float,
         graph_name: str = None,
+        markers: list[dict] | None = None,
         ctx: Context = None,
     ) -> str:
         """
@@ -221,6 +272,8 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
         edges = _edge_lines(edges_gdf)
         map_center = [round(lat, 4), round(lng, 4)]
 
+        marker_list = _normalize_markers(markers)
+
         if ctx and ctx.client_supports_extension(UI_EXTENSION_ID):
             return json.dumps(
                 {
@@ -232,12 +285,13 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
                     "center": map_center,
                     "reachable_count": len(node_pts),
                     "trip_time_s": trip_time_s,
+                    "markers": marker_list,
                 },
                 separators=(",", ":"),
             )
 
         overlay = {"type": "isochrone", "nodes": node_pts, "hull": hull}
-        html = _fallback_html(edges, overlay, sw, ne, map_center)
+        html = _fallback_html(edges, overlay, sw, ne, map_center, marker_list)
         out_path = _SAVE_DIR / "desirepath_isochrone_map.html"
         out_path.write_text(html, encoding="utf-8")
         return html

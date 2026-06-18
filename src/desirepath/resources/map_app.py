@@ -68,7 +68,14 @@ function render(d){
     d.nodes.forEach(pt=>L.circleMarker(pt,{radius:4,color:"#2255aa",fillColor:"#4477cc",fillOpacity:.7,weight:1}).addTo(map));
     badge.textContent=d.reachable_count+" nodes reachable in "+d.trip_time_s+"s";
   }else{
-    badge.textContent=d.node_count+" nodes · "+d.edge_count+" edges";
+    const ms=d.markers&&d.markers.length?" · "+d.markers.length+" markers":"";
+    badge.textContent=d.node_count+" nodes · "+d.edge_count+" edges"+ms;
+  }
+
+  if(d.markers&&d.markers.length){
+    d.markers.forEach(m=>L.circleMarker(m.pt,{
+      radius:9,color:m.color,fillColor:m.color,fillOpacity:.85,weight:2
+    }).bindTooltip(m.label||"",{sticky:true}).addTo(map));
   }
 
   map.fitBounds(d.bounds);
