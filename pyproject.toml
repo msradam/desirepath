@@ -1,0 +1,41 @@
+[project]
+name = "desirepath"
+version = "0.1.0"
+description = "Urban street network analysis via MCP and CLI"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.0",
+    "osmnx>=2.0",
+    "networkx>=3.0",
+    "momepy>=0.8",
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "typer>=0.9",
+    "numpy>=1.24",
+    "anthropic>=0.40",
+]
+
+[project.optional-dependencies]
+dev     = ["pytest", "pytest-asyncio", "claude-code-sdk"]
+loaders = ["pyrosm>=0.9"]
+transit = ["city2graph>=0.3"]
+access  = ["pandana>=0.7"]
+spatial = ["libpysal>=4.14.1", "esda>=2.9.0", "spaghetti>=1.7.6"]
+all     = ["pyrosm>=0.9", "city2graph>=0.3", "pandana>=0.7", "libpysal>=4.14.1", "esda>=2.9.0", "spaghetti>=1.7.6"]
+
+[project.scripts]
+desirepath = "desirepath.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/desirepath"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "module"
+testpaths = ["tests"]
+pythonpath = ["tests"]

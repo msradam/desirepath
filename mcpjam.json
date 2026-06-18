@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "desirepath": {
+      "command": "uv",
+      "args": ["run", "desirepath", "serve"],
+      "cwd": "/Users/amsrahman/desirepath",
+      "type": "stdio"
+    }
+  }
+}
