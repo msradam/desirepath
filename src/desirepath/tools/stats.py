@@ -179,8 +179,6 @@ def register(mcp: FastMCP, store: GraphStore) -> None:
         Simulate targeted removal of the top 5 betweenness-centrality nodes
         one at a time and report how the largest connected component changes.
 
-        Answers how robust the network is to targeted attack on its most central nodes.
-
         O(VE) for betweenness centrality. Use on subgraphs for large networks.
         """
         G = store.get(graph_name)

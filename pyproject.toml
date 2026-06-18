@@ -4,6 +4,19 @@ version = "0.1.0"
 description = "Urban street network analysis via MCP and CLI"
 readme = "README.md"
 requires-python = ">=3.12"
+license = {file = "LICENSE"}
+authors = [{name = "Adam Munawar Rahman", email = "msrahmanadam@gmail.com"}]
+keywords = ["mcp", "osmnx", "urban", "street-network", "gis", "geospatial"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+
 dependencies = [
     "fastmcp>=2.0",
     "osmnx>=2.0",
@@ -15,6 +28,11 @@ dependencies = [
     "numpy>=1.24",
     "anthropic>=0.40",
 ]
+
+[project.urls]
+Homepage = "https://github.com/msradam/desirepath"
+Repository = "https://github.com/msradam/desirepath"
+Issues = "https://github.com/msradam/desirepath/issues"
 
 [project.optional-dependencies]
 dev     = ["pytest", "pytest-asyncio", "claude-code-sdk"]

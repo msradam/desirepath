@@ -27,8 +27,14 @@ def serve(
     graphml: Optional[Path] = typer.Option(None, help="Path to a GraphML file."),
     name: str = typer.Option("graph", help="Name for the loaded graph."),
     network_type: str = typer.Option("drive", help="OSMnx network type."),
+    port: Optional[int] = typer.Option(
+        None, help="Run HTTP server on this port instead of stdio."
+    ),
+    host: str = typer.Option("127.0.0.1", help="Host for HTTP transport."),
 ) -> None:
-    """Start the MCP server (stdio transport)."""
+    """Start the MCP server (stdio by default; use --port for HTTP)."""
+    import asyncio
+
     import osmnx as ox
 
     from desirepath.server import create_server, mount
@@ -56,12 +62,16 @@ def serve(
         server = mount(G, name=name)
     else:
         typer.echo(
-            "Starting empty -- use load_graph(source='place') to load a graph.",
+            "Starting empty; use load_graph(source='place') to load a graph.",
             err=True,
         )
         server = create_server()
 
-    server.run()
+    if port:
+        typer.echo(f"Serving on http://{host}:{port}/mcp", err=True)
+        asyncio.run(server.run_async(transport="streamable-http", host=host, port=port))
+    else:
+        server.run()
 
 
 @app.command()
