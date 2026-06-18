@@ -193,7 +193,9 @@ server.run()
 
 ## Attribution
 
-- Street network data: OpenStreetMap contributors (ODbL)
-- Graph construction: [OSMnx](https://github.com/gboeing/osmnx) by Geoff Boeing
+Street network data is from [OpenStreetMap](https://www.openstreetmap.org/copyright) © OpenStreetMap contributors, available under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/). Any derivative use of this data must include this attribution and comply with the ODbL.
+
+Graph construction uses [OSMnx](https://github.com/gboeing/osmnx) by Geoff Boeing, available under the MIT license. If you use OSMnx in research, cite: Boeing, G. (2017). OSMnx: New methods for acquiring, constructing, analyzing, and visualizing complex street networks. *Computers, Environment and Urban Systems*, 65, 126-139. https://doi.org/10.1016/j.compenvurbsys.2017.05.004
+
 - Urban morphology: [Momepy](https://github.com/martinfleis/momepy) by Martin Fleischmann
 - Spatial statistics: [PySAL](https://pysal.org)
